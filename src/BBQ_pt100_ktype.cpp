@@ -228,7 +228,6 @@ void setupRelays();
 
 void setup()
 {
-delay(2000);
 setupESP32();
 setupOledScreen();
 setupSPIFFS();
