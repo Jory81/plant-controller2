@@ -10,6 +10,7 @@ void onRootRequest(AsyncWebServerRequest *request) {
 void initWebServer() {
     server.on("/", onRootRequest);
     server.serveStatic("/", SPIFFS, "/");
+    AsyncElegantOTA.begin(&server);   // Start ElegantOTA
     server.begin();
 }
              

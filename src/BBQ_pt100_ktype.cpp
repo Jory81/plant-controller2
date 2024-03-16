@@ -1,5 +1,11 @@
 #include <Arduino.h>
 
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
+
+#define nobrownout true
+#define lowtxpower true
+
 #ifdef ESP8266
  #include <ESP8266WiFi.h>
  #include "FS.h" 
@@ -16,6 +22,7 @@
 #include <ArduinoJson.h>
 
 #include <ESPAsyncWebServer.h>
+#include <AsyncElegantOTA.h>
 
 #include <Thermocouple.h>
 #include <MAX6675_Thermocouple.h>
@@ -34,6 +41,10 @@
 
 #include "RTClib.h"
 #include "time.h"
+
+#include "PCF8575.h"
+
+PCF8575 pcf8575(0x21);
 
 //#define DEBUG_OUTPUT // comment out for debugging mode (mainly for checking memory issues and JSON communication)
 
@@ -75,12 +86,22 @@ AsyncWebSocket ws("/ws");
 // #define CS2_PIN 26
 // NOT FULLY TESTED AND OPERATIONAL FOR MULTIPLE SENSORS - FYI
 
-const int RELAYPIN1 = 14;
-const int RELAYPIN2 = 13;
-const int RELAYPIN3 = 25; 
-const int RELAYPIN4 = 33;
-const int RELAYPIN5 = 2; // DISCONNECT PIN AT FLASH - CONNECT AFTER FLASHING
-const int RELAYPIN6 = 15; //
+// const int RELAYPIN1 = 14;
+// const int RELAYPIN2 = 13;
+// const int RELAYPIN3 = 25; 
+// const int RELAYPIN4 = 33;
+// const int RELAYPIN5 = 2; // DISCONNECT PIN AT FLASH - CONNECT AFTER FLASHING
+// const int RELAYPIN6 = 15; //
+
+/*use GPIO 14 and 33 for relay control. Set 14 high, when measures low, external relay resets power. GPIO high when DHT need reset
+*/
+
+const int RELAYPIN1 = P0;
+const int RELAYPIN2 = P1;
+const int RELAYPIN3 = P2; 
+const int RELAYPIN4 = P3;
+const int RELAYPIN5 = P4; // DISCONNECT PIN AT FLASH - CONNECT AFTER FLASHING
+const int RELAYPIN6 = P5; //
 
 #define OUTPUT_PIN1 4 // Fan1
 const int freq = 10;
@@ -101,15 +122,21 @@ Thermocouple* thermocouple[5];
 
 #define DHTPIN1 16 // 
 #define DHTPIN2 17
-#define DHTPIN3 12 // DISCONNECT PIN AT FLASH - CONNECT AFTER FLASHING/ RUNNING 
+// #define DHTPIN3 12 // DISCONNECT PIN AT FLASH - CONNECT AFTER FLASHING/ RUNNING 
+
+#//define DHTPIN1 P6 // 
+//#define DHTPIN2 P7
+//#define DHTPIN3 P8 // DISCONNECT PIN AT FLASH - CONNECT AFTER FLASHING/ RUNNING 
 
 DHT dht[] = {
   {DHTPIN1, DHT22},
   {DHTPIN2, DHT22},
-  {DHTPIN3, DHT22},
+  //{DHTPIN3, DHT22},
 };
 
-Adafruit_MAX31865 maxthermo[4] = {Adafruit_MAX31865(5), Adafruit_MAX31865(26), Adafruit_MAX31865(27), Adafruit_MAX31865(32)} ; // 5, 26, 27, 32, 12 // 35 probably won't work, but there are no pins left
+//Adafruit_MAX31865 maxthermo[4] = {Adafruit_MAX31865(P10), Adafruit_MAX31865(P11), Adafruit_MAX31865(P12), Adafruit_MAX31865(P13), }; 
+Adafruit_MAX31865 maxthermo[4] = {Adafruit_MAX31865(5), Adafruit_MAX31865(26), Adafruit_MAX31865(27), Adafruit_MAX31865(32)}; // 5, 26, 27, 32, 12 // 35 probably won't work, but there are no pins left
+
 //Adafruit_MAX31865 maxthermo[5] = {Adafruit_MAX31865(34), Adafruit_MAX31865(35), Adafruit_MAX31865(36), Adafruit_MAX31865(39), Adafruit_MAX31865(5)} ;
 // The value of the Rref resistor. Use 430.0!
 #define RREF 430.0
@@ -201,6 +228,7 @@ void setupRelays();
 
 void setup()
 {
+delay(2000);
 setupESP32();
 setupOledScreen();
 setupSPIFFS();
@@ -294,3 +322,41 @@ void timeControl(){
     currentMinutes = ((dateHour*60)+dateMinute);
   }
 }
+
+/* reset board greenhouse
+
+#define relaypin7 14
+#define relaypin8 33
+
+void setup() {
+
+pinMode(relaypin7, OUTPUT);
+digitalWrite(relaypin7, HIGH);
+pinMode(relaypin8, OUTPUT);
+digitalWrite(relaypin8, HIGH);
+  // put your setup code here, to run once:
+
+}
+
+void loop() {
+int resetBoard = analogRead(34); // GPIO34
+if (resetBoard < 2500){
+  digitalWrite(relaypin7, LOW);
+  delay(1000);
+  digitalWrite(relaypin7, HIGH);
+  delay(30000);
+}
+delay(100);
+int resetDHT = analogRead(35); // GPIO35
+if (resetDHT > 3000){
+  digitalWrite(relaypin8, LOW);
+  delay(1000);
+  digitalWrite(relaypin8, HIGH);
+  delay(10000);
+}
+delay(100);
+}
+
+
+
+*/

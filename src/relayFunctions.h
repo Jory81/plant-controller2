@@ -20,7 +20,7 @@ void executeTask(byte function, boolean manualRelay, const int relayPin){
 void noFunction (boolean manualRelay, const int relayPin){
   bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
       if (manualRelay != relayReg){ // checks if manualRelay is not equal to relay output. If it's not: if manualRelay is true turn On Relay, if false, turn Off relay.
-        digitalWrite(relayPin, !manualRelay);
+        pcf8575.digitalWrite(relayPin, !manualRelay);
       }
 }
 
@@ -48,12 +48,16 @@ void light1Control(boolean manualRelay, const int relayPin){
       // }
     }
   }
-  bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
-      if (climate1.lights != relayReg){
-        digitalWrite(relayPin, !climate1.lights);
-        //Serial.println("send lights message to client");
-        notifyClientsSingleObject("lights1", climate1.lights);
-      }
+  pcf8575.digitalWrite(relayPin, !climate1.lights);
+  //Serial.println("send lights message to client");
+  notifyClientsSingleObject("lights1", climate1.lights);
+
+  // bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
+  //     if (climate1.lights != relayReg){
+  //       pcf8575.digitalWrite(relayPin, !climate1.lights);
+  //       //Serial.println("send lights message to client");
+  //       notifyClientsSingleObject("lights1", climate1.lights);
+  //     }
   return;
 }
 
@@ -81,12 +85,15 @@ void light2Control(boolean manualRelay, const int relayPin){
       // }
     }
   }
-  bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
-      if (climate2.lights != relayReg){
-        digitalWrite(relayPin, !climate2.lights);
-        //Serial.println("send lights message to client");
-        notifyClientsSingleObject("lights2", climate2.lights);
-      }
+  pcf8575.digitalWrite(relayPin, !climate2.lights);
+  //Serial.println("send lights message to client");
+  notifyClientsSingleObject("lights2", climate2.lights);
+  // bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
+  //     if (climate2.lights != relayReg){
+  //       pcf8575.digitalWrite(relayPin, !climate2.lights);
+  //       //Serial.println("send lights message to client");
+  //       notifyClientsSingleObject("lights2", climate2.lights);
+  //     }
   return;
 }
 
@@ -105,14 +112,18 @@ void light2Control(boolean manualRelay, const int relayPin){
       //Serial.println("LIGHTS2_OFF");
     }
   } 
+  pcf8575.digitalWrite(relayPin, !climate3.lights);
+  //Serial.println("send lights message to client");
+  notifyClientsSingleObject("lights3", climate3.lights);
+ 
   bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
 
-  if (climate3.lights != relayReg){
-    //lightState2 = lights2;
-    digitalWrite(relayPin, !climate3.lights);
-    //Serial.println("send lights message to client");
-    notifyClientsSingleObject("lights3", climate3.lights);
-  }
+  // if (climate3.lights != relayReg){
+  //   //lightState2 = lights2;
+  //   pcf8575.digitalWrite(relayPin, !climate3.lights);
+  //   //Serial.println("send lights message to client");
+  //   notifyClientsSingleObject("lights3", climate3.lights);
+  // }
   return;
   }
 
@@ -125,12 +136,14 @@ void light2Control(boolean manualRelay, const int relayPin){
       climate1.heater = false;
     }
   }
-  bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
-  if (climate1.heater != relayReg){
-    //heaterState1 = heater1;
-    digitalWrite(relayPin, !climate1.heater);
-    notifyClientsSingleObject("heater1", climate1.heater);
-  }
+  pcf8575.digitalWrite(relayPin, !climate1.heater);
+  notifyClientsSingleObject("heater1", climate1.heater);
+  // bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
+  // if (climate1.heater != relayReg){
+  //   //heaterState1 = heater1;
+  //   pcf8575.digitalWrite(relayPin, !climate1.heater);
+  //   notifyClientsSingleObject("heater1", climate1.heater);
+  // }
   return;
 }
 
@@ -144,12 +157,15 @@ void heater2Control(boolean manualRelay, const int relayPin){
       climate2.heater = false;
     }
   }
+
+  pcf8575.digitalWrite(relayPin, !climate2.heater);
+  notifyClientsSingleObject("heater2", climate2.heater);
   bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
-  if (climate2.heater != relayReg){
-    //heaterState2 = heater2;
-    digitalWrite(relayPin, !climate2.heater);
-    notifyClientsSingleObject("heater2", climate2.heater);
-  }
+  // if (climate2.heater != relayReg){
+  //   //heaterState2 = heater2;
+  //   pcf8575.digitalWrite(relayPin, !climate2.heater);
+  //   notifyClientsSingleObject("heater2", climate2.heater);
+  // }
   return;
 }
 
@@ -162,12 +178,16 @@ void heater3Control(boolean manualRelay, const int relayPin){
       climate3.heater = false;
     }
   }
-  bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
-  if (climate3.heater != relayReg){
-    //heaterState2 = heater2;
-    digitalWrite(relayPin, !climate3.heater);
-    notifyClientsSingleObject("heater3", climate3.heater);
-  }
+
+  pcf8575.digitalWrite(relayPin, !climate3.heater);
+  notifyClientsSingleObject("heater3", climate3.heater);
+  
+  // bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
+  // if (climate3.heater != relayReg){
+  //   //heaterState2 = heater2;
+  //   pcf8575.digitalWrite(relayPin, !climate3.heater);
+  //   notifyClientsSingleObject("heater3", climate3.heater);
+  // }
   return;
 }
 
@@ -180,14 +200,19 @@ void heater4Control(boolean manualRelay, const int relayPin){
       climate4.heater = false;
     }
   }
-  bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
-  if (climate4.heater != relayReg){
-    //heaterState2 = heater2;
-    digitalWrite(relayPin, !climate4.heater);
-    notifyClientsSingleObject("heater4", climate4.heater);
-  }
+  pcf8575.digitalWrite(relayPin, !climate4.heater);
+  notifyClientsSingleObject("heater4", climate4.heater);
+  // bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
+  // if (climate4.heater != relayReg){
+  //   //heaterState2 = heater2;
+  //   pcf8575.digitalWrite(relayPin, !climate4.heater);
+  //   notifyClientsSingleObject("heater4", climate4.heater);
+  // }
   return;
 }
+
+
+
 
 void humidity1Control(boolean manualRelay, const int relayPin){
   if (!manualRelay){
@@ -202,7 +227,7 @@ void humidity1Control(boolean manualRelay, const int relayPin){
     //if (humidifierState1 != humidifier1){
     if (climate1.humidifier != relayReg){
       //humidifierState1 = humidifier1;
-      digitalWrite(relayPin, !climate1.humidifier);
+      pcf8575.digitalWrite(relayPin, !climate1.humidifier);
       notifyClientsSingleObject("humidifier1", climate1.humidifier);
     }
     return;
@@ -221,11 +246,14 @@ bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPin
   // if (humidifierState2 != humidifier2){
   //   humidifierState2 = humidifier2;
   if (climate2.humidifier != relayReg){
-    digitalWrite(relayPin, !climate2.humidifier);
+    pcf8575.digitalWrite(relayPin, !climate2.humidifier);
     notifyClientsSingleObject("humidifier2", climate2.humidifier);
   }
   return;
 }
+
+
+
 
 void fan1Control(){ // CLIMATE 1 based on TargetAirTemp1 and value from DHT22 sensor.
 if (fan1.manual){
@@ -362,14 +390,19 @@ return;
 }
 
 void DHTsensors(boolean manualRelay, const int relayPin){
-bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
-if (relayReg == 0 && (sensorsOff)){
-  digitalWrite(relayPin, false); // boolean resetHumidity = false;
+  if (sensorsOff){
+  pcf8575.digitalWrite(relayPin, false); // boolean resetHumidity = false;
   sensorsOff = false;
-}
+  }
+
+// bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
+// if (relayReg == 0 && (sensorsOff)){
+//   pcf8575.digitalWrite(relayPin, false); // boolean resetHumidity = false;
+//   sensorsOff = false;
+// }
 
 if (resetHumidity){
-  digitalWrite(relayPin, true); // boolean resetHumidity is also true
+    pcf8575.digitalWrite(relayPin, true); // boolean resetHumidity is also true
     resetHumidity = false;
     humidityCounter = 0;
     sensorsOff = true;

@@ -74,6 +74,7 @@ void samplingHumidity(){
             humidityCounter++;
             if (humidityCounter > 6){
               resetHumidity = true;
+              digitalWrite(33, HIGH);
             }
           }  
         }

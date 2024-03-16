@@ -1,5 +1,16 @@
 void setupESP32(){
   Serial.begin(115200); 
+  //WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+  //if(nobrownout) WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // disables brownout
+
+  pcf8575.begin(); // adds more pins
+
+  pinMode(14, OUTPUT);  // external power relay
+  digitalWrite(14, HIGH);
+  pinMode(33, OUTPUT); // external DHT relay
+  digitalWrite(33, LOW);
+  //WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+
   //pinMode(onboard_led.pin, OUTPUT);
   //pinMode(button.pin,      INPUT);
 }
@@ -173,23 +184,23 @@ void setupFans(){
 }
 
 void setupRelays(){
-  pinMode(RELAYPIN1,   OUTPUT);
-  digitalWrite(RELAYPIN1, true);
+  pcf8575.pinMode(RELAYPIN1,   OUTPUT);
+  pcf8575.digitalWrite(RELAYPIN1, true);
   
-  pinMode(RELAYPIN2,   OUTPUT);
-  digitalWrite(RELAYPIN2, true);
+  pcf8575.pinMode(RELAYPIN2,   OUTPUT);
+  pcf8575.digitalWrite(RELAYPIN2, true);
   
-  pinMode(RELAYPIN3,   OUTPUT);
-  digitalWrite(RELAYPIN3, true);
+  pcf8575.pinMode(RELAYPIN3,   OUTPUT);
+  pcf8575.digitalWrite(RELAYPIN3, true);
   
-  pinMode(RELAYPIN4,   OUTPUT);
-  digitalWrite(RELAYPIN4, true);
+  pcf8575.pinMode(RELAYPIN4,   OUTPUT);
+  pcf8575.digitalWrite(RELAYPIN4, true);
   
-  pinMode(RELAYPIN5,   OUTPUT);
-  digitalWrite(RELAYPIN5, true);
+  pcf8575.pinMode(RELAYPIN5,   OUTPUT);
+  pcf8575.digitalWrite(RELAYPIN5, true);
   
-  pinMode(RELAYPIN6 ,   OUTPUT);
- digitalWrite(RELAYPIN6, true);
+  pcf8575.pinMode(RELAYPIN6 ,   OUTPUT);
+  pcf8575.digitalWrite(RELAYPIN6, true);
 }
 
 void initializeEEPROMvariables(){
