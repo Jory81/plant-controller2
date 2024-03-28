@@ -174,14 +174,15 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
         else if (json.containsKey("fan1")){climate1.fan = json["fan1"]; fan1.fanState = !climate1.fan;}
         else if (json.containsKey("humidifier1")){climate1.humidifier = json["humidifier1"]; } // humidifierState1 = !humidifier1;
 
-        else if (json.containsKey("lights2")){climate2.lights = json["lights2"]; } // lightState2 = !lights2;}
-        else if (json.containsKey("heater2")){climate2.heater = json["heater2"]; }// heaterState2 = !heater2;// Serial.print("heaterState is now "); Serial.print(heaterState1); Serial.print(" And heater is: "); Serial.println(heater1);
+        else if (json.containsKey("lights2")){climate2.lights = json["lights2"]; } 
+        else if (json.containsKey("heater2")){climate2.heater = json["heater2"]; }
         else if (json.containsKey("fan2")){climate2.fan = json["fan2"]; fan2.fanState = !climate2.fan;}
-        else if (json.containsKey("humidifier2")){climate2.humidifier = json["humidifier2"]; } // humidifierState2 = !humidifier2;
+        else if (json.containsKey("humidifier2")){climate2.humidifier = json["humidifier2"]; } 
 
-        else if (json.containsKey("lights3")){climate3.lights = json["lights3"]; } // lightState2 = !lights2;}
-        else if (json.containsKey("heater3")){climate3.heater = json["heater3"]; }// heaterState2 = !heater2;// Serial.print("heaterState is now "); Serial.print(heaterState1); Serial.print(" And heater is: "); Serial.println(heater1);
-        //else if (json.containsKey("humidifier3")){humidifier3 = json["humidifier3"]; } // humidifierState2 = !humidifier2;
+        else if (json.containsKey("lights3")){climate3.lights = json["lights3"]; }
+        else if (json.containsKey("heater3")){climate3.heater = json["heater3"]; }
+
+        else if (json.containsKey("heater4")){climate4.heater = json["heater4"]; }
 
         else if (json.containsKey("manualMosfet1")){fan1.manual = json["manualMosfet1"]; if (!fan1.manual){fan1.manualSpeed = EEPROM.read(offsetof(storeEEPROM, fan1.manualSpeed));}; if (saveInEEPROM){EEPROM.put(offsetof(storeEEPROM, fan1.manual), fan1.manual);  EEPROM.commit(); };}
         else if (json.containsKey("manualFanspeed1")){fan1.manualSpeed = json["manualFanspeed1"]; if (fan1.manual){ if (fan1.manualSpeed > 0){climate1.fan = true;} else {climate1.fan = false;} fan1.fanState = !climate1.fan;}; if (saveInEEPROM){EEPROM.put(offsetof(storeEEPROM, fan1.manualSpeed), fan1.manualSpeed);  EEPROM.commit(); };}

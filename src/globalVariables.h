@@ -175,6 +175,7 @@ unsigned long previousMillis2=0;
 unsigned long previousMillis3=0;
 unsigned long previousMillis4=0;
 unsigned long previousMillis5=0;
+unsigned long previousMillis6=0;
 
 unsigned long currentMillis = 0;
 unsigned long seconds = 0;

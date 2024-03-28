@@ -74,7 +74,9 @@ void samplingHumidity(){
             humidityCounter++;
             if (humidityCounter > 6){
               resetHumidity = true;
-              digitalWrite(33, HIGH);
+              digitalWrite(3, HIGH);
+              previousMillis6 = millis();
+              //digitalWrite(33, HIGH); when pcf8575 is attached
             }
           }  
         }

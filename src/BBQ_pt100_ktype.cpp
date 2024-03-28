@@ -1,10 +1,10 @@
 #include <Arduino.h>
 
-#include "soc/soc.h"
-#include "soc/rtc_cntl_reg.h"
+// #include "soc/soc.h"
+// #include "soc/rtc_cntl_reg.h"
 
-#define nobrownout true
-#define lowtxpower true
+// #define nobrownout true
+// #define lowtxpower true
 
 #ifdef ESP8266
  #include <ESP8266WiFi.h>
@@ -42,9 +42,9 @@
 #include "RTClib.h"
 #include "time.h"
 
-#include "PCF8575.h"
+// #include "PCF8575.h"
 
-PCF8575 pcf8575(0x21);
+// PCF8575 pcf8575(0x21);
 
 //#define DEBUG_OUTPUT // comment out for debugging mode (mainly for checking memory issues and JSON communication)
 
@@ -86,22 +86,22 @@ AsyncWebSocket ws("/ws");
 // #define CS2_PIN 26
 // NOT FULLY TESTED AND OPERATIONAL FOR MULTIPLE SENSORS - FYI
 
-// const int RELAYPIN1 = 14;
-// const int RELAYPIN2 = 13;
-// const int RELAYPIN3 = 25; 
-// const int RELAYPIN4 = 33;
-// const int RELAYPIN5 = 2; // DISCONNECT PIN AT FLASH - CONNECT AFTER FLASHING
-// const int RELAYPIN6 = 15; //
+const int RELAYPIN1 = 14;
+const int RELAYPIN2 = 13;
+const int RELAYPIN3 = 25; 
+const int RELAYPIN4 = 33;
+const int RELAYPIN5 = 2; // DISCONNECT PIN AT FLASH - CONNECT AFTER FLASHING
+const int RELAYPIN6 = 15; //
 
 /*use GPIO 14 and 33 for relay control. Set 14 high, when measures low, external relay resets power. GPIO high when DHT need reset
 */
 
-const int RELAYPIN1 = P0;
-const int RELAYPIN2 = P1;
-const int RELAYPIN3 = P2; 
-const int RELAYPIN4 = P3;
-const int RELAYPIN5 = P4; // DISCONNECT PIN AT FLASH - CONNECT AFTER FLASHING
-const int RELAYPIN6 = P5; //
+// const int RELAYPIN1 = P0;
+// const int RELAYPIN2 = P1;
+// const int RELAYPIN3 = P2; 
+// const int RELAYPIN4 = P3;
+// const int RELAYPIN5 = P4; 
+// const int RELAYPIN6 = P5;
 
 #define OUTPUT_PIN1 4 // Fan1
 const int freq = 10;
@@ -120,8 +120,8 @@ Thermocouple* thermocouple[5];
 #define updateOledDisplay 5000
 #define updateFans 1000
 
-#define DHTPIN1 16 // 
-#define DHTPIN2 17
+#define DHTPIN1 17 // 
+#define DHTPIN2 16
 // #define DHTPIN3 12 // DISCONNECT PIN AT FLASH - CONNECT AFTER FLASHING/ RUNNING 
 
 #//define DHTPIN1 P6 // 
@@ -263,6 +263,15 @@ void loop(){
       samplingHumidity();
       sendHumidityToClient();
     previousMillis2 = millis();
+    }
+
+    if ((resetHumidity) && (millis() - previousMillis6 > 225)){
+        //pcf8575.digitalWrite(relayPin, true); // boolean resetHumidity is also true
+        digitalWrite(3, LOW);
+        resetHumidity = false;
+        humidityCounter = 0;
+        //sensorsOff = true;
+        resetCount = resetCount + 1;
     }
 
     if (millis() - previousMillis3 >= systemParam.graphUpdate){
