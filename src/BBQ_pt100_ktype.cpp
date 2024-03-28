@@ -336,8 +336,11 @@ void timeControl(){
 #define relaypin7 14
 #define relaypin8 33
 
-void setup() {
+unsigned long startMillisReset = 0;
+unsigned long startMillisDHT = 0;
 
+void setup() {
+delay(60000);
 pinMode(relaypin7, OUTPUT);
 digitalWrite(relaypin7, HIGH);
 pinMode(relaypin8, OUTPUT);
@@ -348,20 +351,36 @@ digitalWrite(relaypin8, HIGH);
 
 void loop() {
 int resetBoard = analogRead(34); // GPIO34
-if (resetBoard < 2500){
-  digitalWrite(relaypin7, LOW);
-  delay(1000);
-  digitalWrite(relaypin7, HIGH);
-  delay(30000);
+
+if (resetBoard > 2500){
+  if (startMillisReset == 0){
+    startMillisReset = millis();
+  }
+  if (startMillisDHT == 0){
+    startMillisDHT = millis();
+  }
 }
-delay(100);
-int resetDHT = analogRead(35); // GPIO35
-if (resetDHT > 3000){
-  digitalWrite(relaypin8, LOW);
-  delay(1000);
-  digitalWrite(relaypin8, HIGH);
-  delay(10000);
+else {
+ startMillisReset = 0; 
+ startMillisDHT = 0;
 }
+
+if ((startMillisReset != 0) && (millis() - startMillisReset > 1000)){
+    digitalWrite(relaypin7, LOW);
+    delay(5000);
+    digitalWrite(relaypin7, HIGH);
+    delay(15000);
+    startMillisReset = 0;
+}
+
+if ((startMillisDHT != 0) && (millis() - startMillisDHT > 50)){
+    digitalWrite(relaypin8, LOW);
+    delay(1000);
+    digitalWrite(relaypin8, HIGH);
+    delay(1000);
+    startMillisDHT = 0;
+}
+
 delay(100);
 }
 
