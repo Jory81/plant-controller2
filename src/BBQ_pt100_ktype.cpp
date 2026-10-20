@@ -23,6 +23,8 @@
 
 #include <ESPAsyncWebServer.h>
 #include <AsyncElegantOTA.h>
+#include <DNSServer.h>
+#include <ESPmDNS.h>
 
 #include <Thermocouple.h>
 #include <MAX6675_Thermocouple.h>
@@ -76,6 +78,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
+DNSServer dnsServer; // captive portal DNS, only started in soft-AP mode
 
 // THERMOCOUPLE PINS
 #define SCK_PIN 18
@@ -155,7 +158,7 @@ void timeControl();
 void syncTimeRTC();
 void reInitializeTimeStrings();
 void reInitializeTimeInts();
-void writeStringToEEPROM(int addrOffset, const String &strToWrite);
+void writeStringToEEPROM(int addrOffset, const String &strToWrite, size_t maxSize);
 int convertStringToInt(String str, int workflow);
 //double modifiedMap(double x, double in_min, double in_max, double out_min, double out_max);
 byte modifiedMap(double x, double in_min, double in_max, byte out_min, byte out_max);
@@ -213,6 +216,7 @@ void setupFans();
 void setupRelays();
 
 #include "globalVariables.h"
+#include "deviceInfo.h"
 
 //input/output variables passed by reference, so they are updated automatically
 // AutoPID myPID(&temperature, &setPoint, &outputVal1, OUTPUT_MIN1, OUTPUT_MAX1, KP, KI, KD);
@@ -244,9 +248,17 @@ setupRelays();
 }
 
 void loop(){
-    //ws.cleanupClients();
+    if (!wifiStationMode){
+      dnsServer.processNextRequest();
+    }
+
+    if (rtcSyncRequested){ // requested by the web page; done here so the websocket task is never blocked
+      rtcSyncRequested = false;
+      syncTimeRTC();
+    }
 
     if (millis() - previousMillis1 >= systemParam.tempUpdate){
+      ws.cleanupClients(); // free sockets of phones that dropped off without closing
       timeControl();
       samplingTemp();        
       sendTempToClient();

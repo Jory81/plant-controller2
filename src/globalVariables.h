@@ -163,6 +163,7 @@ String wifiID;
 String wifiPASS;
 
 boolean wifiStationMode=false;
+boolean rtcSyncRequested = false;
 
 boolean resetHumidity = false;
 boolean sensorsOff = false;

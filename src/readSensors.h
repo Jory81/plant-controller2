@@ -61,6 +61,7 @@ void samplingTemp(){
 
 void samplingHumidity(){
     if (systemParam.probeCountH > 0){
+        boolean allValid = true;
         for (int sensor = 0; sensor < systemParam.probeCountH; sensor++){
         concept.dhtH[sensor] = dht[sensor].readHumidity();
         concept.dhtT[sensor] = dht[sensor].readTemperature();
@@ -71,6 +72,7 @@ void samplingHumidity(){
             // Serial.printf(" temp "); Serial.println(dhtT[sensor]);
           }
           else {
+            allValid = false;
             humidityCounter++;
             if (humidityCounter > 6){
               resetHumidity = true;
@@ -79,6 +81,9 @@ void samplingHumidity(){
               //digitalWrite(33, HIGH); when pcf8575 is attached
             }
           }  
+        }
+        if (allValid){
+          humidityCounter = 0; // only power-cycle the sensors after repeated failures in a row
         }
     }
 }

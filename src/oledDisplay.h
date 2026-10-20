@@ -34,7 +34,7 @@ void displayOledScreen(float temp1, float temp2, float temp3, float temp4){
     sprintf(buffer, "DHT1: %2.1f   %2.1f", valid.dhtT[0], valid.dhtH[0]);  
     display.print(buffer);
     }
-    if (systemParam.probeCountH >= 1){ 
+    if (systemParam.probeCountH >= 2){ 
     display.setCursor(0,48);
     sprintf(buffer, "DHT2: %2.1f   %2.1f", valid.dhtT[1], valid.dhtH[1]);  
     display.print(buffer);
