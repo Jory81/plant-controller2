@@ -17,6 +17,14 @@ void executeTask(byte function, boolean manualRelay, const int relayPin){
 }
 }
 
+// true when 'now' lies in the on..off window; also works for schedules over midnight (e.g. 20:00 - 06:00)
+boolean lightsScheduledOn(int now, int lightsOn, int lightsOff){
+  if (lightsOn <= lightsOff){
+    return now >= lightsOn && now < lightsOff;
+  }
+  return now >= lightsOn || now < lightsOff;
+}
+
 void noFunction (boolean manualRelay, const int relayPin){
   bool relayReg = !(*portOutputRegister( digitalPinToPort(relayPin) ) & digitalPinToBitMask(relayPin));
       if (manualRelay != relayReg){ // checks if manualRelay is not equal to relay output. If it's not: if manualRelay is true turn On Relay, if false, turn Off relay.
@@ -27,7 +35,7 @@ void noFunction (boolean manualRelay, const int relayPin){
 
 void light1Control(boolean manualRelay, const int relayPin){
   if (!manualRelay){
-    if (currentMinutes > schedule1.minutesLightsOn && currentMinutes < schedule1.minutesLightsOff){
+    if (lightsScheduledOn(currentMinutes, schedule1.minutesLightsOn, schedule1.minutesLightsOff)){
       climate1.lights = true;
       tempParam1.targetSoilTemp = tempParam1.daySoilTemp;
       // if (!fan1.manual){
@@ -40,7 +48,7 @@ void light1Control(boolean manualRelay, const int relayPin){
       //   }
       // }
     }
-    else if (currentMinutes < schedule1.minutesLightsOn || currentMinutes > schedule1.minutesLightsOn){
+    else {
       climate1.lights = false;
       tempParam1.targetSoilTemp = tempParam1.nightSoilTemp;
       // if (!fan1.manual){
@@ -63,7 +71,7 @@ void light1Control(boolean manualRelay, const int relayPin){
 
 void light2Control(boolean manualRelay, const int relayPin){
   if (!manualRelay){
-    if (currentMinutes > schedule2.minutesLightsOn && currentMinutes < schedule2.minutesLightsOff){
+    if (lightsScheduledOn(currentMinutes, schedule2.minutesLightsOn, schedule2.minutesLightsOff)){
       climate2.lights = true;
       tempParam2.targetSoilTemp = tempParam2.daySoilTemp;
       // if (!fan2.manual){
@@ -76,7 +84,7 @@ void light2Control(boolean manualRelay, const int relayPin){
       //   }
       // }
     }
-    else if (currentMinutes < schedule2.minutesLightsOn || currentMinutes > schedule2.minutesLightsOn){
+    else {
       climate2.lights = false;
       tempParam2.targetSoilTemp = tempParam2.nightSoilTemp;
       // if (!fan2.manual){
@@ -99,13 +107,13 @@ void light2Control(boolean manualRelay, const int relayPin){
 
   void light3Control(boolean manualRelay, const int relayPin){
  if (!manualRelay){
-    if (currentMinutes > schedule3.minutesLightsOn && currentMinutes < schedule3.minutesLightsOff){
+    if (lightsScheduledOn(currentMinutes, schedule3.minutesLightsOn, schedule3.minutesLightsOff)){
       climate3.lights = true;
       tempParam3.targetSoilTemp = tempParam3.daySoilTemp;
       tempParam4.targetSoilTemp = tempParam4.daySoilTemp;
       //Serial.println("LIGHTS2_ON");
     }
-    else if (currentMinutes < schedule3.minutesLightsOn || currentMinutes > schedule3.minutesLightsOn){
+    else {
       climate3.lights = false;
       tempParam3.targetSoilTemp = tempParam3.nightSoilTemp;
       tempParam4.targetSoilTemp = tempParam4.nightSoilTemp;
@@ -243,7 +251,7 @@ if (!manualRelay){
   if (valid.dhtH[1] < humidParam2.humidmin){
     climate2.humidifier = true;
   }
-  else if (valid.dhtH[1] > humidParam1.humidmax){
+  else if (valid.dhtH[1] > humidParam2.humidmax){
     climate2.humidifier = false;
   }
 }

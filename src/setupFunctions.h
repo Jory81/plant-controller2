@@ -94,6 +94,7 @@ void setupRTC(){
 void setupWIFI(){
   int wifiCounter=0;
   WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false); // modem sleep causes websocket lag and dropped connections
   const char *WIFI_SSID = &wifiID[0];
   const char *WIFI_PASS = &wifiPASS[0];
   WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -117,7 +118,11 @@ void setupWIFI(){
   WiFi.mode(WIFI_OFF);
   delay(1000);
   WiFi.mode(WIFI_AP);
+  WiFi.setSleep(false);
   WiFi.softAP(WIFI_SSID_AP, WIFI_PASS_AP);
+  // answer every DNS lookup with our own IP, so phones without internet resolve
+  // instantly and show the "sign in to network" popup that opens this page
+  dnsServer.start(53, "*", WiFi.softAPIP());
   Serial.println(F("soft-AP IP:"));
   display.println(F("soft-AP IP:"));
   Serial.println(WiFi.softAPIP());
@@ -143,6 +148,7 @@ void setupWIFI(){
     
   initWebSocket();
   initWebServer();
+  setupDiscovery();
     
   display.println(F("setup complete"));
 //    display.println(F("mDNS: esp32.local/"));
@@ -240,6 +246,9 @@ systemParam.probeTypeH  = EEPROM.read(offsetof(storeEEPROM, systemParam.probeTyp
 systemParam.probeCountH = EEPROM.read(offsetof(storeEEPROM, systemParam.probeCountH));
 systemParam.measurements = EEPROM.read(offsetof(storeEEPROM, systemParam.measurements));
 systemParam.externalRTC = EEPROM.read(offsetof(storeEEPROM, systemParam.externalRTC));
+systemParam.probeCountT = constrain(systemParam.probeCountT, 1, 4);
+systemParam.probeCountH = constrain(systemParam.probeCountH, 0, 2);
+systemParam.measurements = constrain(systemParam.measurements, 1, 16);
 //systemParam.resetRTC = EEPROM.read(offsetof(storeEEPROM, systemParam.resetRTC));
 
 relay1.connected = EEPROM.read(offsetof(storeEEPROM, relay1.connected));
@@ -320,6 +329,8 @@ EEPROM.get(offsetPosition+(4*m), calibrationValue[m]);
 #else
 systemParam.graphUpdate = EEPROM.readInt(offsetof(storeEEPROM, systemParam.graphUpdate));
 systemParam.tempUpdate = EEPROM.readInt(offsetof(storeEEPROM, systemParam.tempUpdate));
+if (systemParam.graphUpdate < 1000){ systemParam.graphUpdate = 1000; }
+if (systemParam.tempUpdate < 1000){ systemParam.tempUpdate = 1000; }
 
 tempParam1.daySoilTemp = EEPROM.readFloat(offsetof(storeEEPROM, tempParam1.daySoilTemp));
 tempParam1.nightSoilTemp = EEPROM.readFloat(offsetof(storeEEPROM, tempParam1.nightSoilTemp));
@@ -540,7 +551,16 @@ void reInitializeTimeInts(){
 
 void syncTimeRTC(){ // This function syncs RTC timer upon connection to wifi in case lostPower is true.
 if (systemParam.externalRTC){
-      if ((rtc.lostPower())  || (systemParam.resetRTC)) {
+      if (((rtc.lostPower())  || (systemParam.resetRTC)) && !wifiStationMode) {
+        // soft-AP mode has no internet/NTP: use the time the web page sent (hourStart/minutesStart)
+        // only the time of day is used; the date is kept, or the build date when the RTC lost power
+        DateTime date = rtc.lostPower() ? DateTime(F(__DATE__), F(__TIME__)) : rtc.now();
+        rtc.adjust(DateTime(date.year(), date.month(), date.day(), hourStart, minutesStart, 0));
+        Serial.println("RTC set from browser time");
+        systemParam.resetRTC = false;
+        notifyClientsSingleObject("resetRTC", systemParam.resetRTC);
+      }
+      else if ((rtc.lostPower())  || (systemParam.resetRTC)) {
         Serial.println("RTC lost power, lets set the time!");
 
         configTime(3600, 3600, ntpServer);
@@ -558,7 +578,7 @@ if (systemParam.externalRTC){
         
         Serial.println(asctime(&time));
 
-        rtc.adjust(DateTime(time.tm_year, time.tm_mon, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec));
+        rtc.adjust(DateTime(time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec));
         systemParam.resetRTC = false;
         notifyClientsSingleObject("resetRTC", systemParam.resetRTC);
 //        EEPROM.put(offsetof(storeEEPROM, systemParam.resetRTC), (systemParam.resetRTC));

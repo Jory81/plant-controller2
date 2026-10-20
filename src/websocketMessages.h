@@ -7,10 +7,21 @@ void onRootRequest(AsyncWebServerRequest *request) {
   //request->send(SPIFFS, "/index.js", "text/javascript");
 }
 
+void onNotFound(AsyncWebServerRequest *request) {
+  if (!wifiStationMode){ // captive portal: send phones' connectivity checks to the controller page
+    request->redirect("http://" + WiFi.softAPIP().toString() + "/");
+  }
+  else {
+    request->send(404, "text/plain", "Not found");
+  }
+}
+
 void initWebServer() {
     server.on("/", onRootRequest);
-    server.serveStatic("/", SPIFFS, "/");
+    server.on("/info", HTTP_GET, onInfoRequest);
+    server.serveStatic("/", SPIFFS, "/"); // serves file.gz automatically when present
     AsyncElegantOTA.begin(&server);   // Start ElegantOTA
+    server.onNotFound(onNotFound);
     server.begin();
 }
              
@@ -44,14 +55,14 @@ void initWebSocket() {
 void notifyClientsSingleString(String object, String &message) {
         // String objectString = object;
     //const uint8_t size = JSON_OBJECT_SIZE(1);
-    StaticJsonDocument<50> doc;
+    StaticJsonDocument<128> doc;
     String key = object;
     String Value = message;
     doc[key] = Value; 
 
     //serializeJson(doc, Serial);
 
-    char data[50];
+    char data[128];
     size_t len = serializeJson(doc, data);
     DEBUG_PRINTLN(F("sending JSON string: "));
         for (int i = 0; i < len;  i++){
@@ -107,7 +118,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
 
         //const uint8_t size = JSON_OBJECT_SIZE(1);
         StaticJsonDocument<200> json;
-        DeserializationError err = deserializeJson(json, data);
+        DeserializationError err = deserializeJson(json, data, len);
         if (err) {
             DEBUG_PRINT(F("deserializeJson() failed with code "));
             DEBUG_PRINTLN(err.c_str());
@@ -115,16 +126,16 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
         }
 
         if (json.containsKey("requestInfo")){sendProgramInfo();}
-        else if (json.containsKey("hours")){hourStart = json["hours"]; minutesStart = json["minutes"]; syncTimeRTC(); } //
+        else if (json.containsKey("hours")){hourStart = json["hours"]; minutesStart = json["minutes"]; rtcSyncRequested = true; } //
         else if (json.containsKey("saveInEEPROM")){saveInEEPROM = json["saveInEEPROM"];}   
-        else if (json.containsKey("ssid")){String wifiID = json["ssid"]; EEPROMposition = offsetof(storeEEPROM, systemParam.SSID[0]); writeStringToEEPROM(EEPROMposition, wifiID); notifyClientsSingleString("wifiID", wifiID);}
-        else if (json.containsKey("pass")){String wifiPASS = json["pass"]; EEPROMposition = offsetof(storeEEPROM, systemParam.PASS[0]); writeStringToEEPROM(EEPROMposition, wifiPASS); notifyClientsSingleString("wifiPASS", wifiPASS);}
+        else if (json.containsKey("ssid")){String wifiID = json["ssid"]; EEPROMposition = offsetof(storeEEPROM, systemParam.SSID[0]); writeStringToEEPROM(EEPROMposition, wifiID, sizeof(systemParam.SSID)); notifyClientsSingleString("wifiID", wifiID);}
+        else if (json.containsKey("pass")){String wifiPASS = json["pass"]; EEPROMposition = offsetof(storeEEPROM, systemParam.PASS[0]); writeStringToEEPROM(EEPROMposition, wifiPASS, sizeof(systemParam.PASS)); notifyClientsSingleString("wifiPASS", wifiPASS);}
         
         // THESE SYSTEM VALUES ARE ALWAYS SAVED TO EEPROM
         else if (json.containsKey("probeTypeT")){systemParam.probeTypeT = json["probeTypeT"]; EEPROM.put(offsetof(storeEEPROM, systemParam.probeTypeT), systemParam.probeTypeT);  EEPROM.commit(); }
-        else if (json.containsKey("probeCountT")){systemParam.probeCountT = json["probeCountT"]; EEPROM.put(offsetof(storeEEPROM, systemParam.probeCountT), systemParam.probeCountT);  EEPROM.commit();}
+        else if (json.containsKey("probeCountT")){systemParam.probeCountT = constrain((int)json["probeCountT"], 1, 4); EEPROM.put(offsetof(storeEEPROM, systemParam.probeCountT), systemParam.probeCountT);  EEPROM.commit();}
         else if (json.containsKey("probeTypeH")){systemParam.probeTypeH = json["probeTypeH"]; EEPROM.put(offsetof(storeEEPROM, systemParam.probeTypeH), systemParam.probeTypeH);  EEPROM.commit();}
-        else if (json.containsKey("probeCountH")){systemParam.probeCountH = json["probeCountH"]; EEPROM.put(offsetof(storeEEPROM, systemParam.probeCountH), systemParam.probeCountH);  EEPROM.commit();}
+        else if (json.containsKey("probeCountH")){systemParam.probeCountH = constrain((int)json["probeCountH"], 0, 2); EEPROM.put(offsetof(storeEEPROM, systemParam.probeCountH), systemParam.probeCountH);  EEPROM.commit();}
         else if (json.containsKey("relay1Connected")){relay1.connected = json["relay1Connected"]; EEPROM.put(offsetof(storeEEPROM, relay1.connected), relay1.connected);  EEPROM.commit();}
         else if (json.containsKey("relay2Connected")){relay2.connected = json["relay2Connected"]; EEPROM.put(offsetof(storeEEPROM, relay2.connected), relay2.connected);  EEPROM.commit();}
         else if (json.containsKey("relay3Connected")){relay3.connected = json["relay3Connected"]; EEPROM.put(offsetof(storeEEPROM, relay3.connected), relay3.connected);  EEPROM.commit();}
@@ -134,12 +145,12 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
         
         else if (json.containsKey("fan1Connected")){fan1.connected = json["fan1Connected"]; EEPROM.put(offsetof(storeEEPROM, fan1.connected), fan1.connected);  EEPROM.commit();}
         else if (json.containsKey("fan2Connected")){fan2.connected = json["fan2Connected"]; EEPROM.put(offsetof(storeEEPROM, fan2.connected), fan2.connected);  EEPROM.commit();}
-        else if (json.containsKey("graphUpdate")){systemParam.graphUpdate = json["graphUpdate"]; systemParam.graphUpdate = systemParam.graphUpdate*1000; EEPROM.put(offsetof(storeEEPROM, systemParam.graphUpdate), (systemParam.graphUpdate));  EEPROM.commit();}
-        else if (json.containsKey("tempUpdate")){systemParam.tempUpdate = json["tempUpdate"]; systemParam.tempUpdate = systemParam.tempUpdate*1000; EEPROM.put(offsetof(storeEEPROM, systemParam.tempUpdate), (systemParam.tempUpdate));  EEPROM.commit();}
+        else if (json.containsKey("graphUpdate")){systemParam.graphUpdate = json["graphUpdate"]; systemParam.graphUpdate = max(systemParam.graphUpdate, (uint32_t)1)*1000; EEPROM.put(offsetof(storeEEPROM, systemParam.graphUpdate), (systemParam.graphUpdate));  EEPROM.commit();}
+        else if (json.containsKey("tempUpdate")){systemParam.tempUpdate = json["tempUpdate"]; systemParam.tempUpdate = max(systemParam.tempUpdate, (uint32_t)1)*1000; EEPROM.put(offsetof(storeEEPROM, systemParam.tempUpdate), (systemParam.tempUpdate));  EEPROM.commit();}
        
-        else if (json.containsKey("measurements")){systemParam.measurements = json["measurements"];  EEPROM.put(offsetof(storeEEPROM, systemParam.measurements), (systemParam.measurements));  EEPROM.commit();}
+        else if (json.containsKey("measurements")){systemParam.measurements = constrain((int)json["measurements"], 1, 16);  EEPROM.put(offsetof(storeEEPROM, systemParam.measurements), (systemParam.measurements));  EEPROM.commit();}
         else if (json.containsKey("externalRTC")){systemParam.externalRTC = json["externalRTC"];  EEPROM.put(offsetof(storeEEPROM, systemParam.externalRTC), (systemParam.externalRTC));  EEPROM.commit(); ESP.restart();} // 
-        else if (json.containsKey("resetRTC")){systemParam.resetRTC = json["resetRTC"]; syncTimeRTC();}//  EEPROM.put(offsetof(storeEEPROM, systemParam.resetRTC), (systemParam.resetRTC));  EEPROM.commit();}
+        else if (json.containsKey("resetRTC")){systemParam.resetRTC = json["resetRTC"]; rtcSyncRequested = true;}//  EEPROM.put(offsetof(storeEEPROM, systemParam.resetRTC), (systemParam.resetRTC));  EEPROM.commit();}
         //else if (json.containsKey("PIDcontrol")){PIDcontrol = json["PIDcontrol"]; EEPROM.put(offsetof(storeInEEPROM, PIDcontrol), PIDcontrol);  EEPROM.commit();}
 
         else if (json.containsKey("funcRelay1")){relay1.function = json["funcRelay1"]; EEPROM.put(offsetof(storeEEPROM, relay1.function), relay1.function);  EEPROM.commit();}
@@ -149,10 +160,10 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
         else if (json.containsKey("funcRelay5")){relay5.function = json["funcRelay5"]; EEPROM.put(offsetof(storeEEPROM, relay5.function), relay5.function);  EEPROM.commit();}
         else if (json.containsKey("funcRelay6")){relay6.function = json["funcRelay6"]; EEPROM.put(offsetof(storeEEPROM, relay6.function), relay6.function);  EEPROM.commit();}
         
-        else if (json.containsKey("lights1ON")){String StoreLights1ON = json["lights1ON"]; String StoreLights1OFF = json["lights1OFF"]; EEPROMposition = offsetof(storeEEPROM, lights1.lightsOn[0]); writeStringToEEPROM(EEPROMposition, StoreLights1ON); EEPROMposition = offsetof(storeEEPROM, lights1.lightsOff[0]); writeStringToEEPROM(EEPROMposition, StoreLights1OFF); reInitializeTimeStrings();}
-        else if (json.containsKey("lights2ON")){String StoreLights2ON = json["lights2ON"]; String StoreLights2OFF = json["lights2OFF"]; EEPROMposition = offsetof(storeEEPROM, lights2.lightsOn[0]); writeStringToEEPROM(EEPROMposition, StoreLights2ON); EEPROMposition = offsetof(storeEEPROM, lights2.lightsOff[0]); writeStringToEEPROM(EEPROMposition, StoreLights2OFF); reInitializeTimeStrings();}
-        else if (json.containsKey("lights3ON")){String StoreLights3ON = json["lights3ON"]; String StoreLights3OFF = json["lights3OFF"]; EEPROMposition = offsetof(storeEEPROM, lights3.lightsOn[0]); writeStringToEEPROM(EEPROMposition, StoreLights3ON); EEPROMposition = offsetof(storeEEPROM, lights3.lightsOff[0]); writeStringToEEPROM(EEPROMposition, StoreLights3OFF); reInitializeTimeStrings();}
-        // THESE VALUES ARE ONLY PERMANENTLT SWITCHED WHEN EEPROM BUTTON IS CHECKED
+        else if (json.containsKey("lights1ON")){String StoreLights1ON = json["lights1ON"]; String StoreLights1OFF = json["lights1OFF"]; EEPROMposition = offsetof(storeEEPROM, lights1.lightsOn[0]); writeStringToEEPROM(EEPROMposition, StoreLights1ON, 6); EEPROMposition = offsetof(storeEEPROM, lights1.lightsOff[0]); writeStringToEEPROM(EEPROMposition, StoreLights1OFF, 6); reInitializeTimeStrings();}
+        else if (json.containsKey("lights2ON")){String StoreLights2ON = json["lights2ON"]; String StoreLights2OFF = json["lights2OFF"]; EEPROMposition = offsetof(storeEEPROM, lights2.lightsOn[0]); writeStringToEEPROM(EEPROMposition, StoreLights2ON, 6); EEPROMposition = offsetof(storeEEPROM, lights2.lightsOff[0]); writeStringToEEPROM(EEPROMposition, StoreLights2OFF, 6); reInitializeTimeStrings();}
+        else if (json.containsKey("lights3ON")){String StoreLights3ON = json["lights3ON"]; String StoreLights3OFF = json["lights3OFF"]; EEPROMposition = offsetof(storeEEPROM, lights3.lightsOn[0]); writeStringToEEPROM(EEPROMposition, StoreLights3ON, 6); EEPROMposition = offsetof(storeEEPROM, lights3.lightsOff[0]); writeStringToEEPROM(EEPROMposition, StoreLights3OFF, 6); reInitializeTimeStrings();}
+        // THESE VALUES ARE ONLY PERMANENTLY SWITCHED WHEN EEPROM BUTTON IS CHECKED
         else if (json.containsKey("calValue1")){cal.pt100[0] = json["calValue1"]; if (saveInEEPROM){EEPROM.put(offsetof(storeEEPROM, cal.pt100[0]), cal.pt100[0]);  EEPROM.commit(); };}
         else if (json.containsKey("calValue2")){cal.pt100[1] = json["calValue2"]; if (saveInEEPROM){EEPROM.put(offsetof(storeEEPROM, cal.pt100[1]), cal.pt100[1]);  EEPROM.commit(); };}
         else if (json.containsKey("calValue3")){cal.pt100[2] = json["calValue3"]; if (saveInEEPROM){EEPROM.put(offsetof(storeEEPROM, cal.pt100[2]), cal.pt100[2]);  EEPROM.commit(); };}
@@ -243,7 +254,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
 
 void sendProgramInfo(){
 //StaticJsonDocument<2000> doc; // 2500
-DynamicJsonDocument doc(2000);
+DynamicJsonDocument doc(3072);
 doc["probeTypeT"] = systemParam.probeTypeT;
 doc["probeCountT"]   = systemParam.probeCountT;
 doc["probeTypeH"]   = systemParam.probeTypeH;
@@ -366,25 +377,24 @@ doc["heater4"] = climate4.heater;
 //doc["humidifier3"] = humidifier3;
 doc["saveInEEPROM"] = saveInEEPROM;
 
-char data[2000]; // 2500
+String data; // on the heap: a 2 kB array on the websocket task's stack risks a stack overflow
 size_t len = serializeJson(doc, data);
 
     DEBUG_PRINT(F("sending JSON message: ")); DEBUG_PRINTLN(len);
-    for (int i = 0; i < len;  i++){
-    DEBUG_PRINT(data[i]);
-    }
-    DEBUG_PRINTLN(" ");
+    DEBUG_PRINTLN(data);
+    if (doc.overflowed()){ DEBUG_PRINTLN(F("program info JSON overflowed")); }
 
-ws.textAll(data, len);
+ws.textAll(data);
 return;
 }
 
-void writeStringToEEPROM(int addrOffset, const String &strToWrite){
+void writeStringToEEPROM(int addrOffset, const String &strToWrite, size_t maxSize){
   if (strToWrite == NULL){
       //Serial.println("this string is empty");
   }
   else{  
-    byte length = strToWrite.length();
+    // keep the text and its terminating 0 inside its EEPROM slot, longer text overwrote the next setting
+    byte length = min(strToWrite.length(), maxSize - 1);
     //Serial.print("len "); Serial.println(len);
     //Serial.print("addr offset ");Serial.println(addrOffset);
     //EEPROM.write(addrOffset, len);
@@ -415,13 +425,13 @@ return;
 // }
 
 void sendTempToClient (){
-    StaticJsonDocument<100> doc;
+    StaticJsonDocument<192> doc;
     doc["temp1"] = String(valid.pt100[0],2);
     doc["temp2"] = String(valid.pt100[1],2);
     doc["temp3"] = String(valid.pt100[2],2);
     doc["temp4"] = String(valid.pt100[3],2);
 
-    char data[100];
+    char data[192];
     size_t len = serializeJson(doc, data);
 
     DEBUG_PRINT(F("length temp string: ")); DEBUG_PRINTLN(len);
