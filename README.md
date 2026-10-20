@@ -24,8 +24,7 @@ When the stored wifi network can't be reached, the controller starts its own acc
 - `GET /info` returns `{"type":"greenhouse","name":"Greenhouse","id":"a1b2c3","version":"2.0","mode":"sta"|"ap","ip":"..."}`
 - mDNS: `greenhouse-<id>.local`, service `_espdevice._tcp`
 
-The companion app in the [BBQ-controller repository](https://github.com/Jory81/BBQ-controller/tree/claude/zealous-babbage-4j08al/companion-app)
-uses this to find all your ESP32 devices.
+The [ESP Device Hub app](https://github.com/Jory81/diy_app_engine/tree/main/app) uses this to find all your ESP32 devices.
 
 ## Flashing
 
