@@ -40,4 +40,9 @@ connecting fails, hold the BOOT button while clicking *Connect*.
 
 ## Over wifi (no cable)
 
-Open `http://<controller-ip>/update` (or `http://192.168.4.1/update` on the ESP32-AP network) and upload `firmware.bin` as *Firmware* and `spiffs.bin` as *Filesystem*.
+Open `http://<controller-ip>/update` (or `http://192.168.4.1/update` on the ESP32-AP network).
+Upload `firmware.bin` with *OTA Mode: Firmware*, wait for the restart, then upload `spiffs.bin`
+with *OTA Mode: Filesystem*. The saved settings are kept. Never upload a *full-flash* file there.
+
+Controllers still running an older firmware show the older update page (two round buttons
+*Firmware* / *Filesystem* instead of the *OTA Mode* list); it works the same.
