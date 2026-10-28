@@ -12,6 +12,7 @@
 #else
  #include <WiFi.h>
  #include <SPIFFS.h>
+ #include <esp_mac.h> // esp_read_mac() in deviceInfo.h (core 3 no longer includes it)
 #endif
 
 #include <Adafruit_GFX.h>
